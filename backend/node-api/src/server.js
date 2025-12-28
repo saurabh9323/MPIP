@@ -1,8 +1,19 @@
 require("dotenv").config();
 const app = require("./app");
+const db = require("./database/mysql");
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`🚀 Node API running on port ${PORT}`);
-});
+(async () => {
+  try {
+    await db.query("SELECT 1");
+    console.log("✅ MySQL connected successfully");
+
+    app.listen(PORT, () => {
+      console.log(`🚀 Node API running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error("❌ MySQL connection failed:", error.message);
+    process.exit(1);
+  }
+})();
