@@ -10,7 +10,7 @@ exports.register = async ({ email, password, roleName }) => {
     const [rows] = await db.query("CALL RegisterUser(?, ?, ?)", [
       email,
       hashedPassword,
-      roleName,
+      "user",
     ]);
 
     const result = rows[0][0];
@@ -29,15 +29,13 @@ exports.register = async ({ email, password, roleName }) => {
 
 exports.login = async ({ email, password }) => {
   const [rows] = await db.query("CALL LoginUser(?)", [email]);
-  console.log(rows, "ropws");
   const result = rows[0][0];
-  console.log(result.status, "result");
+
   if (!result || result.status !== "SUCCESS") {
     throw new AppError("Invalid credentials", 400);
   }
 
   const isMatch = await bcrypt.compare(password, result.password);
-  console.log(isMatch, "isMatch");
   if (!isMatch) {
     throw new AppError("Invalid credentials", 400);
   }
@@ -51,5 +49,13 @@ exports.login = async ({ email, password }) => {
     { expiresIn: "1h" }
   );
 
-  return { token };
+  return {
+    token,
+    user: {
+      id: result.user_id,
+      role: result.role_name,
+      email: result.email,
+    },
+  };
 };
+
