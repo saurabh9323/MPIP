@@ -8,7 +8,7 @@ const menu = [
   { label: "Dashboard", href: "/dashboard" },
   { label: "Profile", href: "/profile" },
   { label: "Settings", href: "/settings" },
-  { label: "Chatbot", href: "/chatbot" }
+//   { label: "Chatbot", href: "/chatbot" }
 ];
 
 export default function Sidebar() {

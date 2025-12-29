@@ -11,7 +11,6 @@ export default function PostAuthLayout({
     <div className="flex h-screen overflow-hidden">
       {/* Sidebar */}
       <Sidebar />
-
       {/* Main Content */}
       <div className="flex flex-col flex-1">
         <Topbar />

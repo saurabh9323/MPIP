@@ -1,117 +1,139 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Card } from "@/src/components/ui/card";
+import { useState, useRef, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
-import { Badge } from "@/src/components/ui/badge";
+import { askChatbot } from "@/src/components/chatbot/chat.service";
 
 type Message = {
   id: number;
-  role: "user" | "bot";
+  role: "user" | "assistant";
   content: string;
 };
 
-export default function ChatbotPage() {
+export default function ChatModal({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
-      role: "bot",
-      content: "Hi 👋 How can I help you today?",
+      role: "assistant",
+      content: "Hi 👋 How can I help you?",
     },
   ]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  /* ------------------ Auto Scroll ------------------ */
+  /* ---------------- Auto scroll ---------------- */
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, typing]);
 
-  /* ------------------ Send Message ------------------ */
-  const sendMessage = () => {
-    if (!input.trim()) return;
+  /* ---------------- Send message ---------------- */
+  const sendMessage = async () => {
+    if (!input.trim() || typing) return;
 
-    const userMessage: Message = {
+    const userMsg: Message = {
       id: Date.now(),
       role: "user",
       content: input,
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setTyping(true);
 
-    // Dummy bot reply
-    setTimeout(() => {
+    try {
+      const reply = await askChatbot(userMsg.content);
+
       setMessages((prev) => [
         ...prev,
         {
           id: Date.now() + 1,
-          role: "bot",
-          content:
-            "This is a dummy response 🤖. Later I’ll be connected to real AI.",
+          role: "assistant",
+          content: reply,
         },
       ]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          role: "assistant",
+          content:
+            "⚠️ Sorry, something went wrong. Please try again.",
+        },
+      ]);
+    } finally {
       setTyping(false);
-    }, 1200);
+    }
   };
 
   return (
-    <div className="max-w-4xl mx-auto h-[calc(100vh-6rem)] flex flex-col">
-      {/* ================= HEADER ================= */}
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-semibold">
-          Chatbot
-        </h1>
-        <Badge variant="secondary">Online</Badge>
-      </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg h-[70vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>AI Assistant</DialogTitle>
+        </DialogHeader>
 
-      {/* ================= CHAT AREA ================= */}
-      <Card className="flex-1 p-4 overflow-y-auto space-y-4">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex ${
-              msg.role === "user"
-                ? "justify-end"
-                : "justify-start"
-            }`}
-          >
+        {/* ================= Messages ================= */}
+        <div className="flex-1 overflow-y-auto space-y-3 text-sm pr-1">
+          {messages.map((m) => (
             <div
-              className={`max-w-[70%] rounded-lg px-4 py-2 text-sm ${
-                msg.role === "user"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted"
+              key={m.id}
+              className={`flex ${
+                m.role === "user"
+                  ? "justify-end"
+                  : "justify-start"
               }`}
             >
-              {msg.content}
+              <div
+                className={`max-w-[80%] rounded-lg px-3 py-2 ${
+                  m.role === "user"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted"
+                }`}
+              >
+                {m.content}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
 
-        {typing && (
-          <div className="text-sm text-muted-foreground">
-            Bot is typing…
-          </div>
-        )}
+          {typing && (
+            <p className="text-muted-foreground text-xs">
+              Assistant is typing…
+            </p>
+          )}
 
-        <div ref={bottomRef} />
-      </Card>
+          <div ref={bottomRef} />
+        </div>
 
-      {/* ================= INPUT ================= */}
-      <div className="mt-4 flex gap-2">
-        <Input
-          placeholder="Type your message…"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-        />
-        <Button onClick={sendMessage}>
-          Send
-        </Button>
-      </div>
-    </div>
+        {/* ================= Input ================= */}
+        <div className="flex gap-2 mt-3">
+          <Input
+            placeholder="Ask anything…"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) =>
+              e.key === "Enter" && sendMessage()
+            }
+          />
+          <Button onClick={sendMessage} disabled={typing}>
+            Send
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
