@@ -8,12 +8,12 @@ const updateProfileSchema = Joi.object({
   address: Joi.string().trim().max(500).optional(),
   phone_number: Joi.string().trim().max(15).optional(),
   profile_pic: Joi.string().allow(null, "").optional(),
-}).min(1); // ❗ Reject empty body
+}).min(1);
 
 exports.validateUpdateProfile = (payload) => {
   const { error } = updateProfileSchema.validate(payload, {
     abortEarly: true,
-    allowUnknown: false, // ❗ Reject extra fields
+    allowUnknown: false,
   });
 
   if (error) {

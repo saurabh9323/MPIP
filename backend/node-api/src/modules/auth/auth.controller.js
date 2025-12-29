@@ -37,3 +37,16 @@ exports.login = async (req, res, next) => {
     next(err);
   }
 };
+exports.logout = (req, res) => {
+  res.clearCookie("access_token", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Logged out successfully",
+  });
+};

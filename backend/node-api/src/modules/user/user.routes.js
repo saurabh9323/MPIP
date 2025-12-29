@@ -10,4 +10,5 @@ router.get("/me", authenticate, userController.getUserProfile);
 // Update logged-in user profile
 router.put("/me", authenticate, userController.updateUserProfile);
 
+
 module.exports = router;

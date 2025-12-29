@@ -26,3 +26,4 @@ exports.updateUserProfile = async (req, res, next) => {
     next(error);
   }
 };
+
