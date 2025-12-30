@@ -22,6 +22,8 @@ import {
 
 import { Card } from "@/src/components/ui/card";
 import { Badge } from "@/src/components/ui/badge";
+import { useEffect } from "react";
+import { fetchHealth } from "@/src/lib/api";
 
 /* ------------------ Dummy Data (API-ready) ------------------ */
 
@@ -43,6 +45,12 @@ const profileCompletion = [
 const COLORS = ["#22c55e", "#e5e7eb"];
 
 export default function DashboardPage() {
+
+   useEffect(() => {
+    fetchHealth().then((data) => {
+      console.log("FastAPI response:", data);
+    });
+  }, []);
   return (
     <div className="space-y-8">
       {/* ================= HEADER ================= */}

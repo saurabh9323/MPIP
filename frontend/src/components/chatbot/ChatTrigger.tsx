@@ -8,7 +8,7 @@ export function ChatTrigger() {
   const [open, setOpen] = useState(false);
 
   return (
-    <>
+    <div>
       <Button
         className="rounded-full shadow-lg"
         onClick={() => setOpen(true)}
@@ -17,6 +17,6 @@ export function ChatTrigger() {
       </Button>
 
       <ChatModal open={open} onOpenChange={setOpen} />
-    </>
+    </div>
   );
 }
