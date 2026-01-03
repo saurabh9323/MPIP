@@ -209,6 +209,7 @@ export default function ChatModal({
           value={activeTab}
           onValueChange={(value) => setActiveTab(value as ChatType)}
           className="flex-1 flex flex-col min-h-0 overflow-hidden"
+          style={{height:"400px"}}
         >
           {/* Tab Headers */}
           <div className="px-6 pt-4 pb-3 shrink-0 bg-background border-b">
@@ -237,9 +238,9 @@ export default function ChatModal({
           {/* Global Chat Tab */}
           <TabsContent
             value="GLOBAL"
-            className="flex-1 min-h-0 m-0 overflow-hidden data-[state=active]:animate-in data-[state=active]:fade-in-50"
+            className="flex-1 min-h-0 m-0 overflow-hidden data-[state=active]:animate-in data-[state=active]:fade-in-50 h-[500px]"
           >
-            <div className="h-full overflow-y-auto px-6 py-4 h-[500px]">
+            <div className="overflow-y-auto px-6 py-4 h-[500px]" style={{height:"400px"}}>
               <ChatMessages
                 messages={globalMessages}
                 typing={typing}
@@ -251,9 +252,9 @@ export default function ChatModal({
           {/* System Chat Tab */}
           <TabsContent
             value="SYSTEM"
-            className="flex-1 min-h-0 m-0 overflow-hidden data-[state=active]:animate-in data-[state=active]:fade-in-50"
+            className="flex-1 min-h-0 m-0 overflow-hidden data-[state=active]:animate-in data-[state=active]:fade-in-50 h-[500px]"
           >
-            <div className="h-full overflow-y-auto px-6 py-4 h-[500px]">
+            <div className="overflow-y-auto px-6 py-4 h-[500px]"   style={{height:"400px"}}>
               <ChatMessages
                 messages={systemMessages}
                 typing={typing}
@@ -309,7 +310,7 @@ function ChatMessages({
   bottomRef: React.RefObject<HTMLDivElement | null>;
 }) {
   return (
-    <div className="space-y-4 pb-2">
+    <div className="space-y-4 pb-2 h-[500px]">
       {messages.map((m) => (
         <div
           key={m.id}

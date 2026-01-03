@@ -1,9 +1,9 @@
-from fastapi import APIRouter # type: ignore
+from fastapi import APIRouter,Depends # type: ignore
 from pydantic import BaseModel # type: ignore
 from app.database.mysql import get_connection
 from typing import Literal
 from app.services.groq_service import generate_global_reply
-
+from app.dependencies.auth import get_current_user
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
@@ -16,11 +16,11 @@ class ChatMessage(BaseModel):
 
 
 @router.post("/message")
-def send_message(data: ChatMessage):
+def send_message(data: ChatMessage, current_user=Depends(get_current_user)  ):
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
 
-    user_id = data.user_id
+    user_id = current_user["user_id"]   # ✅ FROM JWT
     session_id = data.session_id
     chat_type = data.chat_type
     user_message = data.message
@@ -63,8 +63,36 @@ def send_message(data: ChatMessage):
     }
 
 
-@router.get("/history/{user_id}/{session_id}")
-def get_chat_history(user_id: str, session_id: str):
+@router.get("/history/{session_id}")
+def get_chat_history(
+    session_id: str,
+    current_user=Depends(get_current_user)
+):
+    user_id = current_user["user_id"]
+
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute(
+        """
+        SELECT role, message, created_at
+        FROM chat_history
+        WHERE user_id = %s AND session_id = %s
+        ORDER BY created_at ASC
+        """,
+        (user_id, session_id)
+    )
+
+    history = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return {
+        "session_id": session_id,
+        "history": history
+    }
+
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
 
