@@ -2,35 +2,68 @@ const db = require("../../database/mysql");
 const AppError = require("../../utils/AppError");
 
 exports.getUserProfile = async (userId) => {
-  const [rows] = await db.query("CALL GetUserProfile(?)", [userId]);
+  const client = await db.connect();
 
-  const result = rows[0][0];
+  try {
+    await client.query("BEGIN");
 
-  if (!result || result.status !== "SUCCESS") {
-    throw new AppError("User profile not found", 404);
+    const result = await client.query(
+      "CALL get_user_profile($1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)",
+      [userId]
+    );
+
+    const profile = result.rows[0];
+
+
+    if (!profile || profile.status !== "SUCCESS") {
+      throw new AppError("User profile not found", 404);
+    }
+
+    await client.query("COMMIT");
+    return profile;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
   }
-
-  return result;
 };
 
 exports.updateUserProfile = async (
   userId,
   { first_name, last_name, address, phone_number, profile_pic }
 ) => {
-  const [rows] = await db.query("CALL UpdateUserProfile(?, ?, ?, ?, ?, ?)", [
-    userId,
-    first_name,
-    last_name,
-    address,
-    phone_number,
-    profile_pic,
-  ]);
+  const client = await db.connect();
 
-  const result = rows[0][0];
+  try {
+    await client.query("BEGIN");
 
-  if (!result || result.status !== "SUCCESS") {
-    throw new AppError("Failed to update user profile", 400);
+    const result = await client.query(
+      "CALL update_user_profile($1, $2, $3, $4, $5, $6, NULL)",
+      [
+        userId,
+        first_name,
+        last_name,
+        address,
+        phone_number,
+        profile_pic,
+      ]
+    );
+
+    const response = result.rows[0];
+
+    if (!response || response.status !== "SUCCESS") {
+      throw new AppError("Failed to update user profile", 400);
+    }
+
+    await client.query("COMMIT");
+
+    return { message: "Profile updated successfully" };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
   }
-
-  return { message: "Profile updated successfully" };
 };
+

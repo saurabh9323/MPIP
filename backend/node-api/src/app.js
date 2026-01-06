@@ -9,9 +9,12 @@ const errorHandler = require("./middlewares/error.middleware");
 const app = express();
 
 app.use(cookieParser());
+// IMPORTANT: increase limit
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://localhost:3001"], // frontend URL
+    origin: ["http://localhost:3000", "http://localhost:3001","http://localhost:3002","http://localhost:3004"], // frontend URL
     credentials: true,
   })
 );

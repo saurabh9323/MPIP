@@ -6,7 +6,7 @@ exports.getUserProfile = async (req, res, next) => {
     const userId = req.user.userId;
 
     const result = await userService.getUserProfile(userId);
-
+console.log("User Profile:", result);
     res.status(200).json(result);
   } catch (error) {
     next(error);

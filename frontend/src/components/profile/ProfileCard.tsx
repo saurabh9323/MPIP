@@ -17,8 +17,8 @@ type Profile = {
     first_name: string | null;
     last_name: string | null;
     address: string | null;
-    phone: string | null;
-    role_name: string;
+    phone_number: string | null;
+    role: string;
 };
 
 export default function ProfilePage() {
@@ -35,8 +35,16 @@ export default function ProfilePage() {
     const loadProfile = async () => {
         try {
             const res = await api.get("/user/me");
-            setProfile(res.data);
-            setForm(res.data);
+            setProfile((prev)=>({
+                ...prev,
+                ...res.data,
+                profile_pic: res.data.profile_pic,
+            }));
+            setForm((prev)=>({
+                ...prev,
+                ...res.data,
+                profile: res.data.profile_pic,
+            }));
         } finally {
             setLoading(false);
         }
@@ -78,7 +86,7 @@ export default function ProfilePage() {
         await api.put("/user/me", {
             first_name: form.first_name,
             last_name: form.last_name,
-            phone_number: form.phone,      // ✅ renamed
+            phone_number: form.phone_number,      // ✅ renamed
             address: form.address,
             profile_pic: form.profile,     // ✅ renamed (base64)
         });
@@ -125,7 +133,7 @@ export default function ProfilePage() {
                             {profile.email}
                         </p>
                         <Badge className="mt-2 capitalize">
-                            {profile.role_name}
+                            {profile.role}
                         </Badge>
                     </div>
                 </div>
@@ -181,7 +189,7 @@ export default function ProfilePage() {
                         <Label>Phone</Label>
                         <Input
                             name="phone"
-                            value={form.phone || ""}
+                            value={form.phone_number || ""}
                             onChange={onChange}
                             disabled={!editing}
                         />
@@ -204,7 +212,7 @@ export default function ProfilePage() {
 
                     <div>
                         <Label>Role</Label>
-                        <Input value={profile.role_name} disabled />
+                        <Input value={profile.role} disabled />
                     </div>
                 </div>
             </Card>
