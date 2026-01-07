@@ -24,7 +24,9 @@ def send_message(
         cursor = conn.cursor()
 
         user_id = current_user["user_id"]
-
+        print(user_id,"user Id")
+        print(data.session_id,"session Id")
+        print(data.chat_type,"data.chat_type Id")
         # Save user message
         cursor.execute(
             """

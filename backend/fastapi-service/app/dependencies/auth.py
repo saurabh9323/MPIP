@@ -4,7 +4,7 @@ from app.utils.jwt import verify_jwt_token
 
 def get_current_user(request: Request):
     token = request.cookies.get("access_token")
-
+    print(token,"token value in auth dep")
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

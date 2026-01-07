@@ -25,7 +25,10 @@ export async function fetchChatHistory(
   sessionId: string
 ) {
   const res = await fetch(
-    `${API_BASE}/chat/history/${userId}/${sessionId}`
+    `${API_BASE}/chat/history/${sessionId}`,{
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    }
   );
 
   if (!res.ok) {
