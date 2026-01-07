@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react-hooks/immutability */
 "use client";
 
 import { useEffect, useState } from "react";
@@ -25,12 +24,12 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginForm() {
     const router = useRouter();
-    const [mounted, setMounted] = useState(false);
+    // const [mounted, setMounted] = useState(false);
     const [apiError, setApiError] = useState<string | null>(null);
 
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+    // useEffect(() => {
+    //     setMounted(true);
+    // }, []);
 
     const {
         register,
@@ -40,7 +39,7 @@ export default function LoginForm() {
         resolver: zodResolver(loginSchema),
     });
 
-    if (!mounted) return null;
+    // if (!mounted) return null;
 
     const onSubmit = async (data: LoginFormValues) => {
         setApiError(null);
@@ -48,10 +47,10 @@ export default function LoginForm() {
         try {
             const res = await api.post("/auth/login", data);
             console.log("Login response:", res);
-            // OPTION A: backend returns token
-            if (res.data?.access_token) {
-                document.cookie = `access_token=${res.data.access_token}; path=/`;
-            }
+            // // OPTION A: backend returns token
+            // if (res.data?.access_token) {
+            //     document.cookie = `access_token=${res.data.access_token}; path=/`;
+            // }
 
             // OPTION B: backend already sets HttpOnly cookie
             router.push("/dashboard");

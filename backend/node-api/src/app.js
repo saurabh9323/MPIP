@@ -21,12 +21,22 @@ app.use(
 
 app.use(helmet());
 app.use(morgan("dev"));
-app.use(express.json());
+// app.use(express.json());
+app.use((req, res, next) => {
+  console.log("NODE API HIT:", req.method, req.originalUrl);
+  next();
+});
 
 // Auth routes
-app.use("/api/auth", authRoutes);
-app.use("/api/user", userRoutes);
+app.use("/auth", authRoutes);
+app.use("/user", userRoutes);
 
 app.use(errorHandler);
+
+// ✅ Catch-all LAST
+app.use((req, res) => {
+  res.status(404).send("API is running....");
+});
+
 
 module.exports = app;
