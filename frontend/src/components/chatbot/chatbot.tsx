@@ -27,6 +27,12 @@ type Message = {
 
 type ChatType = "GLOBAL" | "SYSTEM";
 
+type RawHistoryItem = {
+  role: "user" | "assistant";
+  message: string;
+  created_at: string;
+};
+
 export default function ChatModal({
   open,
   onOpenChange,
@@ -35,15 +41,18 @@ export default function ChatModal({
   onOpenChange: (open: boolean) => void;
 }) {
   const [activeTab, setActiveTab] = useState<ChatType>("GLOBAL");
-  
+
   const [globalMessages, setGlobalMessages] = useState<Message[]>([]);
   const [systemMessages, setSystemMessages] = useState<Message[]>([]);
-  
+
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
-  
+
   const [globalSessionId, setGlobalSessionId] = useState<string | null>(null);
   const [systemSessionId, setSystemSessionId] = useState<string | null>(null);
+
+  const [globalLoaded, setGlobalLoaded] = useState(false);
+  const [systemLoaded, setSystemLoaded] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const userId = "u-123";
@@ -52,51 +61,125 @@ export default function ChatModal({
   const setCurrentMessages = activeTab === "GLOBAL" ? setGlobalMessages : setSystemMessages;
   const currentSessionId = activeTab === "GLOBAL" ? globalSessionId : systemSessionId;
 
+  // Split history into GLOBAL and SYSTEM chats
+  const splitHistory = (history: RawHistoryItem[]) => {
+    const systemMsgs: Message[] = [];
+    const globalMsgs: Message[] = [];
+    const processedIndices = new Set<number>();
+
+    history.forEach((item, index) => {
+      if (processedIndices.has(index)) return;
+
+      const isSystemAssistant =
+        item.role === "assistant" && item.message.startsWith("[SYSTEM]");
+
+      if (isSystemAssistant) {
+        // Find the paired user message (could be before or after)
+        let userIndex = -1;
+
+        // Check next message
+        if (index + 1 < history.length && history[index + 1].role === "user") {
+          userIndex = index + 1;
+        }
+        // Check previous message
+        else if (index > 0 && history[index - 1].role === "user") {
+          userIndex = index - 1;
+        }
+
+        if (userIndex !== -1) {
+          const userMsg = history[userIndex];
+
+          // Add user message first
+          systemMsgs.push({
+            id: systemMsgs.length + 1,
+            role: "user",
+            content: userMsg.message,
+            timestamp: new Date(userMsg.created_at),
+          });
+
+          // Add assistant message (remove [SYSTEM] prefix)
+          systemMsgs.push({
+            id: systemMsgs.length + 1,
+            role: "assistant",
+            content: item.message.replace(/^\[SYSTEM\]\s*/, ""),
+            timestamp: new Date(item.created_at),
+          });
+
+          processedIndices.add(index);
+          processedIndices.add(userIndex);
+        }
+      } else if (!processedIndices.has(index)) {
+        // Add to global chat
+        globalMsgs.push({
+          id: globalMsgs.length + 1,
+          role: item.role,
+          content: item.message,
+          timestamp: new Date(item.created_at),
+        });
+        processedIndices.add(index);
+      }
+    });
+
+    return { systemMessages: systemMsgs, globalMessages: globalMsgs };
+  };
+
+  // Initialize session IDs once when modal opens
   useEffect(() => {
-    if (!open) return;
+    if (!open || globalSessionId || systemSessionId) return;
 
     const globalId = getChatSessionId("GLOBAL");
     const systemId = getChatSessionId("SYSTEM");
-    
+
     setGlobalSessionId(globalId);
     setSystemSessionId(systemId);
+  }, [open, globalSessionId, systemSessionId]);
+
+  // Reset loaded state when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setGlobalLoaded(false);
+      setSystemLoaded(false);
+    }
   }, [open]);
 
+  // Fetch chat history for active tab
   useEffect(() => {
     if (!open) return;
 
     const sessionId = activeTab === "GLOBAL" ? globalSessionId : systemSessionId;
-    if (!sessionId) return;
+    const isLoaded = activeTab === "GLOBAL" ? globalLoaded : systemLoaded;
 
-    const messages = activeTab === "GLOBAL" ? globalMessages : systemMessages;
-    
-    if (messages.length > 0) return;
+    if (!sessionId || isLoaded) return;
 
     fetchChatHistory(userId, sessionId)
       .then((res) => {
-        const history = res.history || [];
-
-        const formatted = history.map((h: any, i: number) => ({
-          id: i + 1,
-          role: h.role,
-          content: h.message,
-          timestamp: h.timestamp ? new Date(h.timestamp) : undefined,
-        }));
-
-        const initialMessages = formatted.length
-          ? formatted
-          : [
-              {
-                id: 1,
-                role: "assistant",
-                content: `Hi 👋 This is the ${activeTab === "GLOBAL" ? "Global" : "System"} chat. How can I help you?`,
-              },
-            ];
+        const history: RawHistoryItem[] = res.history || [];
+        const { systemMessages: sysMsgs, globalMessages: glbMsgs } = splitHistory(history);
 
         if (activeTab === "GLOBAL") {
+          const initialMessages = glbMsgs.length
+            ? glbMsgs
+            : [
+                {
+                  id: 1,
+                  role: "assistant" as const,
+                  content: "Hi 👋 This is the Global chat. How can I help you?",
+                },
+              ];
           setGlobalMessages(initialMessages);
+          setGlobalLoaded(true);
         } else {
+          const initialMessages = sysMsgs.length
+            ? sysMsgs
+            : [
+                {
+                  id: 1,
+                  role: "assistant" as const,
+                  content: "Hi 👋 This is the System chat. How can I help you?",
+                },
+              ];
           setSystemMessages(initialMessages);
+          setSystemLoaded(true);
         }
       })
       .catch(() => {
@@ -110,18 +193,17 @@ export default function ChatModal({
 
         if (activeTab === "GLOBAL") {
           setGlobalMessages(fallbackMsg);
+          setGlobalLoaded(true);
         } else {
           setSystemMessages(fallbackMsg);
+          setSystemLoaded(true);
         }
       });
-  }, [activeTab, globalSessionId, systemSessionId, open]);
+  }, [activeTab, globalSessionId, systemSessionId, open, globalLoaded, systemLoaded, userId]);
 
+  // Auto-scroll to bottom when messages change
   useEffect(() => {
-    const timer = setTimeout(() => {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-    }, 100);
-
-    return () => clearTimeout(timer);
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [currentMessages, typing]);
 
   const sendMessage = async () => {
@@ -172,22 +254,16 @@ export default function ChatModal({
   };
 
   const clearChat = () => {
+    const welcomeMsg = {
+      id: Date.now(),
+      role: "assistant" as const,
+      content: `Hi 👋 This is the ${activeTab === "GLOBAL" ? "Global" : "System"} chat. How can I help you?`,
+    };
+
     if (activeTab === "GLOBAL") {
-      setGlobalMessages([
-        {
-          id: 1,
-          role: "assistant",
-          content: "Hi 👋 This is the Global chat. How can I help you?",
-        },
-      ]);
+      setGlobalMessages([welcomeMsg]);
     } else {
-      setSystemMessages([
-        {
-          id: 1,
-          role: "assistant",
-          content: "Hi 👋 This is the System chat. How can I help you?",
-        },
-      ]);
+      setSystemMessages([welcomeMsg]);
     }
   };
 
@@ -209,7 +285,6 @@ export default function ChatModal({
           value={activeTab}
           onValueChange={(value) => setActiveTab(value as ChatType)}
           className="flex-1 flex flex-col min-h-0 overflow-hidden"
-          style={{height:"400px"}}
         >
           {/* Tab Headers */}
           <div className="px-6 pt-4 pb-3 shrink-0 bg-background border-b">
@@ -238,9 +313,9 @@ export default function ChatModal({
           {/* Global Chat Tab */}
           <TabsContent
             value="GLOBAL"
-            className="flex-1 min-h-0 m-0 overflow-hidden data-[state=active]:animate-in data-[state=active]:fade-in-50 h-[500px]"
+            className="flex-1 min-h-0 m-0 overflow-hidden data-[state=active]:animate-in data-[state=active]:fade-in-50"
           >
-            <div className="overflow-y-auto px-6 py-4 h-[500px]" style={{height:"400px"}}>
+            <div className="h-full overflow-y-auto px-6 py-4" style={{height:"400px"}}>
               <ChatMessages
                 messages={globalMessages}
                 typing={typing}
@@ -252,9 +327,9 @@ export default function ChatModal({
           {/* System Chat Tab */}
           <TabsContent
             value="SYSTEM"
-            className="flex-1 min-h-0 m-0 overflow-hidden data-[state=active]:animate-in data-[state=active]:fade-in-50 h-[500px]"
+            className="flex-1 min-h-0 m-0 overflow-hidden data-[state=active]:animate-in data-[state=active]:fade-in-50"
           >
-            <div className="overflow-y-auto px-6 py-4 h-[500px]"   style={{height:"400px"}}>
+            <div className="h-full overflow-y-auto px-6 py-4" style={{height:"400px"}}>
               <ChatMessages
                 messages={systemMessages}
                 typing={typing}
@@ -310,7 +385,7 @@ function ChatMessages({
   bottomRef: React.RefObject<HTMLDivElement | null>;
 }) {
   return (
-    <div className="space-y-4 pb-2 h-[500px]">
+    <div className="space-y-4 pb-2">
       {messages.map((m) => (
         <div
           key={m.id}
@@ -323,7 +398,7 @@ function ChatMessages({
                 : "bg-muted text-foreground rounded-bl-sm"
             }`}
           >
-            <p className="text-sm leading-relaxed whitespace-pre-wrap break-words word-break">
+            <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
               {m.content}
             </p>
             {m.timestamp && (

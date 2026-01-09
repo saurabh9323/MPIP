@@ -12,7 +12,7 @@ export const api = axios.create({
 
 export async function fetchHealth() {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_BASE_URL}/chat/health`,
+    `${process.env.NEXT_PUBLIC_FASTAPI_URL}/health`,
     { credentials: "include" }
   );
 
