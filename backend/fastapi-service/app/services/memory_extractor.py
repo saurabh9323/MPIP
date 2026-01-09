@@ -3,13 +3,12 @@ from typing import Dict, List, Optional, Tuple
 
 
 # =====================================================
-# 1️⃣ INTENT PHRASES (Natural Language Coverage)
+# 1️⃣ INTENT PHRASES (POSITIVE + NEGATIVE)
 # =====================================================
 
 PREFERENCE_INTENTS = [
-    # like / love
     "i like", "i love", "i enjoy", "i really like", "i really love",
-    "i like to", "i love to", "i enjoy",
+    "i like to", "i love to",
     "i am into", "i’m into", "im into",
     "i am fond of", "i’m fond of",
     "i am obsessed with", "i’m obsessed with",
@@ -29,109 +28,60 @@ PREFERENCE_INTENTS = [
     "i spend time on", "i spend most time on",
 ]
 
+NEGATIVE_INTENTS = [
+    "i don't like", "i do not like", "i hate",
+    "i dislike", "i avoid", "not into", "can't stand"
+]
+
 
 # =====================================================
-# 2️⃣ CATEGORY VOCABULARY (700–1000+ EFFECTIVE TERMS)
+# 2️⃣ GENERAL INFO / FACT INTENTS
+# =====================================================
+
+FACT_INTENTS = {
+    "profession": ["i work as", "i am working as", "my job is", "i’m a", "i am a"],
+    "organization": ["i work at", "my company is"],
+    "location": ["i live in", "i stay in", "i am from"],
+    "goal": ["i want to", "i plan to", "my goal is"],
+    "habit": ["i usually", "i daily", "every day", "every morning"],
+    "constraint": ["i am vegetarian", "i am vegan", "i can't", "i cannot"],
+    "skill": ["i know", "i have experience in", "i am good at"],
+}
+
+
+# =====================================================
+# 3️⃣ CATEGORY VOCABULARY
 # =====================================================
 
 CATEGORY_KEYWORDS: Dict[str, List[str]] = {
-
-    # 🎵 MUSIC
     "music": [
-        "music", "song", "songs", "singer", "band", "album", "playlist",
-        "spotify", "soundtrack", "lyrics", "melody", "beats",
-        "pop", "rock", "rap", "hip hop", "classical", "jazz",
-        "lofi", "edm", "electronic", "indie", "metal", "folk",
-        "instrumental", "violin", "guitar", "piano", "drums",
-        "bollywood songs", "english songs", "hindi songs",
-        "arijit", "taylor swift", "eminem"
+        "music", "song", "songs", "singer", "band", "playlist",
+        "spotify", "pop", "rock", "rap", "classical", "lofi"
     ],
-
-    # ⚽ SPORTS & FITNESS
     "sports": [
-        "sport", "sports", "cricket", "football", "soccer", "basketball",
-        "tennis", "badminton", "hockey", "volleyball",
-        "ipl", "world cup", "champions league",
-        "f1", "formula 1", "motogp", "wwe", "ufc",
-        "gym", "workout", "fitness", "training",
-        "running", "jogging", "cycling", "swimming",
-        "yoga", "stretching", "calisthenics"
+        "cricket", "football", "gym", "workout", "running", "yoga"
     ],
-
-    # 💻 TECH / PROGRAMMING
     "tech": [
-        "tech", "technology", "programming", "coding", "software",
-        "developer", "engineer",
-        "python", "java", "javascript", "typescript",
-        "node", "nodejs", "express",
-        "react", "nextjs", "vue", "angular",
-        "html", "css", "tailwind",
-        "fastapi", "django", "flask",
-        "api", "backend", "frontend", "full stack",
-        "database", "postgres", "mysql", "mongodb", "redis",
-        "docker", "kubernetes", "devops",
-        "aws", "azure", "gcp",
-        "ai", "machine learning", "deep learning", "llm", "chatbot"
+        "python", "fastapi", "node", "react", "nextjs",
+        "postgres", "docker", "aws", "api", "backend", "frontend"
     ],
-
-    # 🎬 MOVIES / SERIES
     "movies": [
-        "movie", "movies", "film", "films",
-        "series", "tv series", "web series", "show",
-        "netflix", "prime", "hotstar", "hulu",
-        "anime", "cartoon", "drama", "thriller",
-        "action", "comedy", "romance", "horror",
-        "hollywood", "bollywood", "tollywood",
-        "marvel", "dc", "avengers", "batman"
+        "movie", "series", "netflix", "anime", "action", "comedy"
     ],
-
-    # 🍕 FOOD
     "food": [
-        "food", "foods", "meal", "meals",
-        "pizza", "burger", "biryani", "pasta",
-        "noodles", "rice", "roti", "chapati",
-        "paneer", "tofu", "dal", "sabzi",
-        "vegetarian", "vegan", "salad",
-        "street food", "junk food", "healthy food",
-        "dessert", "sweet", "chocolate", "ice cream",
-        "indian food", "italian food", "chinese food"
+        "food", "vegetarian", "vegan", "pizza", "biryani", "salad"
     ],
-
-    # 🧘 LIFESTYLE / HEALTH
-    "lifestyle": [
-        "health", "healthy", "wellness",
-        "routine", "habits", "discipline",
-        "sleep", "early morning", "morning routine",
-        "meditation", "mindfulness", "breathing",
-        "self improvement", "productivity",
-        "journaling", "reading", "writing",
-        "focus", "consistency"
-    ],
-
-    # 📚 LEARNING / CAREER
     "learning": [
-        "learning", "studying", "study",
-        "course", "courses", "tutorial",
-        "books", "reading books",
-        "career", "job", "interview",
-        "preparation", "practice",
-        "dsa", "algorithms", "data structures",
-        "system design"
+        "dsa", "algorithms", "system design", "interview", "course"
     ],
-
-    # 🎮 GAMES
     "gaming": [
-        "game", "games", "gaming",
-        "pc games", "mobile games",
-        "bgmi", "pubg", "cod", "call of duty",
-        "valorant", "csgo", "minecraft",
-        "chess", "ludo"
+        "game", "gaming", "bgmi", "pubg", "valorant", "chess"
     ],
 }
 
 
 # =====================================================
-# 3️⃣ NORMALIZATION UTILITIES
+# 4️⃣ NORMALIZATION
 # =====================================================
 
 def normalize(text: str) -> str:
@@ -142,7 +92,7 @@ def normalize(text: str) -> str:
 
 
 # =====================================================
-# 4️⃣ CORE EXTRACTION LOGIC
+# 5️⃣ CORE EXTRACTION (BACKWARD COMPATIBLE)
 # =====================================================
 
 def extract_user_preference(
@@ -150,30 +100,60 @@ def extract_user_preference(
 ) -> Tuple[Optional[str], Optional[dict]]:
     """
     Returns:
-        ("preferences", structured_data) OR (None, None)
+      ("preferences", {...})
+      ("fact", {...})
+      OR (None, None)
     """
+
+    if not message or len(message.strip()) < 5:
+        return None, None
 
     msg = normalize(message)
 
-    # 1️⃣ intent detection
+    # -------------------------------------------------
+    # 1️⃣ FACT DETECTION (GENERAL INFO)
+    # -------------------------------------------------
+    for fact_type, phrases in FACT_INTENTS.items():
+        if any(p in msg for p in phrases):
+            return "fact", {
+                "raw_text": message,
+                "fact_type": fact_type,
+            }
+
+    # -------------------------------------------------
+    # 2️⃣ NEGATIVE PREFERENCES
+    # -------------------------------------------------
+    if any(intent in msg for intent in NEGATIVE_INTENTS):
+        categories = [
+            cat for cat, words in CATEGORY_KEYWORDS.items()
+            if any(w in msg for w in words)
+        ]
+        return "preferences", {
+            "raw_text": message,
+            "type": "negative",
+            "categories": categories,
+            "confidence": 0.6,
+        }
+
+    # -------------------------------------------------
+    # 3️⃣ POSITIVE PREFERENCES (YOUR ORIGINAL LOGIC)
+    # -------------------------------------------------
     if not any(intent in msg for intent in PREFERENCE_INTENTS):
         return None, None
 
     matched_categories: List[str] = []
-
-    # 2️⃣ category detection
     for category, keywords in CATEGORY_KEYWORDS.items():
-        for word in keywords:
-            if word in msg:
-                matched_categories.append(category)
-                break
+        if any(word in msg for word in keywords):
+            matched_categories.append(category)
 
     if not matched_categories:
         return None, None
 
-    # 3️⃣ structured memory output
+    confidence = min(1.0, 0.3 + 0.2 * len(matched_categories))
+
     return "preferences", {
         "raw_text": message,
+        "type": "positive",
         "categories": matched_categories,
-        "confidence": min(1.0, 0.3 + 0.2 * len(matched_categories)),
+        "confidence": round(confidence, 3),
     }
