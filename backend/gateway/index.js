@@ -20,6 +20,7 @@ app.use(
   })
 );
 
+
 app.use(cookieParser());
 
 // 🔥 1️⃣ FastAPI FIRST (more specific)
