@@ -17,44 +17,17 @@ const allowedOrigins = [
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      return callback(new Error("CORS blocked: " + origin));
-    },
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:3002",
+      "http://localhost:3004",
+    ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
-
-
-/* ================================
-   🔥 GLOBAL OPTIONS HANDLER (FIX)
-   ⚠️ DO NOT USE '*' OR '/*'
-================================ */
-app.use((req, res, next) => {
-  if (req.method === "OPTIONS") {
-    console.log("✅ OPTIONS handled by GATEWAY:", req.originalUrl);
-    return res.sendStatus(204);
-  }
-  next();
-});
-
-/* ================================
-   REQUEST LOGGER (DEBUG)
-================================ */
-app.use((req, res, next) => {
-  console.log("🔥 GATEWAY HIT");
-  console.log("METHOD:", req.method);
-  console.log("URL:", req.originalUrl);
-  console.log("ORIGIN:", req.headers.origin);
-  next();
-});
 
 app.use(cookieParser());
 

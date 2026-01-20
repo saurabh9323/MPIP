@@ -8,6 +8,7 @@ const menu = [
   { label: "Dashboard", href: "/dashboard" },
   { label: "Profile", href: "/profile" },
   { label: "Settings", href: "/settings" },
+  { label: "Visualiser", href: "/tools/dsa-visualizer" },
 //   { label: "Chatbot", href: "/chatbot" }
 ];
 
