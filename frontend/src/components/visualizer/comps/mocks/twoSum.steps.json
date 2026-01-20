@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "problem": "Two Sum",
+    "language": "JavaScript"
+  },
+  "steps": [
+    {
+      "id": 1,
+      "title": "Function Call",
+      "description": "twoSum() is called",
+      "stack": [
+        { "name": "twoSum()", "address": "0x2000" }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "HashMap Initialized",
+      "description": "Empty map created",
+      "stack": [
+        { "name": "twoSum()", "address": "0x2000" }
+      ],
+      "heap": [
+        {
+          "id": "map",
+          "type": "HashMap",
+          "address": "0x3000",
+          "data": {}
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Loop Iteration",
+      "description": "i = 0, nums[i] = 2",
+      "variables": {
+        "i": 0,
+        "nums[i]": 2
+      }
+    }
+  ]
+}
