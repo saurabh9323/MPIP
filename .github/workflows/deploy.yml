@@ -1,0 +1,46 @@
+name: Deploy MPIP to Ubuntu
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Deploy to Ubuntu via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/ubuntu/projects/dev/MPIP
+            git pull origin main
+
+            echo "Installing frontend deps"
+            cd frontend
+            npm install
+
+            echo "Installing gateway deps"
+            cd ../backend/gateway
+            npm install
+
+            echo "Installing node-api deps"
+            cd ../node-api
+            npm install
+
+            echo "Reloading PM2 services"
+            cd /home/ubuntu/projects/dev/MPIP
+            pm2 reload ecosystem.config.js
+            pm2 save
