@@ -24,23 +24,31 @@ jobs:
           host: ${{ secrets.SERVER_IP }}
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script_stop: true
           script: |
+            echo "✅ SSH connected"
+
             cd /home/ubuntu/projects/dev/MPIP
+
+            echo "⬇️ Pulling latest code"
             git pull origin main
 
-            echo "Installing frontend deps"
+            echo "📦 Installing frontend dependencies"
             cd frontend
             npm install
 
-            echo "Installing gateway deps"
+            echo "📦 Installing gateway dependencies"
             cd ../backend/gateway
             npm install
 
-            echo "Installing node-api deps"
+            echo "📦 Installing node-api dependencies"
             cd ../node-api
             npm install
 
-            echo "Reloading PM2 services"
+            echo "♻️ Reloading PM2 services"
             cd /home/ubuntu/projects/dev/MPIP
             pm2 reload ecosystem.config.js
             pm2 save
+
+            echo "🚀 Deployment completed successfully"
