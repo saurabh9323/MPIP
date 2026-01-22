@@ -31,7 +31,7 @@ jobs:
             git pull origin main
             npm install
             npm run build
-            pm2 restart mpip-frontend
+            pm2 restart all
           EOF
 
       # ================= GATEWAY =================
@@ -43,7 +43,7 @@ jobs:
             cd /home/ubuntu/projects/dev/MPIP/backend/gateway
             git pull origin main
             npm install
-            pm2 restart mpip-gateway
+            pm2 restart all
           EOF
 
       # ================= NODE API =================
@@ -55,7 +55,7 @@ jobs:
             cd /home/ubuntu/projects/dev/MPIP/backend/node-api
             git pull origin main
             npm install
-            pm2 restart mpip-node-api
+            pm2 restart all
           EOF
 
       # ================= FASTAPI (CHAT) =================
@@ -69,6 +69,6 @@ jobs:
 
             source venv/bin/activate || true
             pip install -r requirements.txt
-            pm2 restart mpip-fastapi
+            pm2 restart all
             sudo systemctl restart fastapi
           EOF
