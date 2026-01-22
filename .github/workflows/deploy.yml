@@ -20,21 +20,21 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
-           - name: Deploy to server
+      - name: Deploy to server
         run: |
           ssh -o IdentitiesOnly=yes \
               -i ~/.ssh/id_ed25519 \
               ubuntu@${{ secrets.SERVER_IP }} << 'EOF'
             set -e
 
-            # Explicitly set Node environment for non-interactive shell
+            # ---- FIX: make node/npm available in non-interactive shell ----
             export NODE_HOME=/home/ubuntu/.nvm/versions/node/v24.12.0
             export PATH=$NODE_HOME/bin:$PATH
 
-            echo "Node version:"
-            node -v
-            npm -v
+            echo "Node:" $(node -v)
+            echo "NPM:" $(npm -v)
 
+            # ---- Deploy ----
             cd /home/ubuntu/projects/dev/MPIP
             git pull origin main
 
