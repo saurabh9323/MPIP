@@ -1,4 +1,4 @@
-name: Deploy MPIP (Folder-wise Correct)
+name: Deploy MPIP (Folder-wise)
 
 on:
   push:
@@ -13,84 +13,71 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2   # IMPORTANT
+          fetch-depth: 2
 
-      # -------- Detect changed folders --------
+      # ---------- Detect changes ----------
       - name: Detect changed folders
         id: changes
         run: |
           CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
 
-          echo "Changed files:"
           echo "$CHANGED_FILES"
 
-          if echo "$CHANGED_FILES" | grep -q "^frontend/"; then
-            echo "frontend=true" >> $GITHUB_OUTPUT
-          else
-            echo "frontend=false" >> $GITHUB_OUTPUT
-          fi
+          echo "frontend=$(echo "$CHANGED_FILES" | grep -q '^frontend/' && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "gateway=$(echo "$CHANGED_FILES" | grep -q '^backend/gateway/' && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "nodeapi=$(echo "$CHANGED_FILES" | grep -q '^backend/node-api/' && echo true || echo false)" >> $GITHUB_OUTPUT
 
-          if echo "$CHANGED_FILES" | grep -q "^backend/gateway/"; then
-            echo "gateway=true" >> $GITHUB_OUTPUT
-          else
-            echo "gateway=false" >> $GITHUB_OUTPUT
-          fi
-
-          if echo "$CHANGED_FILES" | grep -q "^backend/node-api/"; then
-            echo "nodeapi=true" >> $GITHUB_OUTPUT
-          else
-            echo "nodeapi=false" >> $GITHUB_OUTPUT
-          fi
-
-      # -------- Setup SSH --------
+      # ---------- Setup SSH ----------
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY_B64 }}" | base64 --decode > ~/.ssh/id_ed25519
+          echo "${{ secrets.SSH_PRIVATE_KEY_B64 }}" | base64 -d > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
-      # -------- Deploy --------
-      - name: Deploy to server
+      # ---------- Pull latest code ----------
+      - name: Pull latest code
         run: |
-          ssh -o IdentitiesOnly=yes \
-              -i ~/.ssh/id_ed25519 \
-              ubuntu@${{ secrets.SERVER_IP }} << 'EOF'
-            set -e
-
-            export NODE_HOME=/home/ubuntu/.nvm/versions/node/v24.12.0
-            export PATH=$NODE_HOME/bin:$PATH
-
+          ssh ubuntu@${{ secrets.SERVER_IP }} << 'EOF'
             cd /home/ubuntu/projects/dev/MPIP
             git pull origin main
           EOF
 
-      # -------- Frontend --------
+      # ---------- Frontend ----------
       - name: Deploy Frontend
         if: steps.changes.outputs.frontend == 'true'
         run: |
           ssh ubuntu@${{ secrets.SERVER_IP }} << 'EOF'
+            export NODE_HOME=/home/ubuntu/.nvm/versions/node/v24.12.0
+            export PATH=$NODE_HOME/bin:$PATH
+
             cd /home/ubuntu/projects/dev/MPIP/frontend
             npm install
             npm run build
             pm2 restart mpip-frontend
           EOF
 
-      # -------- Gateway --------
+      # ---------- Gateway ----------
       - name: Deploy Gateway
         if: steps.changes.outputs.gateway == 'true'
         run: |
           ssh ubuntu@${{ secrets.SERVER_IP }} << 'EOF'
+            export NODE_HOME=/home/ubuntu/.nvm/versions/node/v24.12.0
+            export PATH=$NODE_HOME/bin:$PATH
+
             cd /home/ubuntu/projects/dev/MPIP/backend/gateway
             npm install
             pm2 restart mpip-gateway
           EOF
 
-      # -------- Node API --------
+      # ---------- Node API ----------
       - name: Deploy Node API
         if: steps.changes.outputs.nodeapi == 'true'
         run: |
           ssh ubuntu@${{ secrets.SERVER_IP }} << 'EOF'
+            export NODE_HOME=/home/ubuntu/.nvm/versions/node/v24.12.0
+            export PATH=$NODE_HOME/bin:$PATH
+
             cd /home/ubuntu/projects/dev/MPIP/backend/node-api
             npm install
             pm2 restart mpip-node-api
