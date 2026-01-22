@@ -1,60 +1,74 @@
-name: Deploy MPIP to Ubuntu
+name: Deploy MPIP (Selective Monorepo)
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+    paths:
+      - "frontend/**"
+      - "backend/gateway/**"
+      - "backend/node-api/**"
+      - "backend/fastapi-service/**"
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY_B64 }}" | base64 --decode > ~/.ssh/id_ed25519
+          echo "${{ secrets.SSH_PRIVATE_KEY_B64 }}" | base64 -d > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
-      - name: Deploy to server
+      # ================= FRONTEND =================
+      - name: Deploy Frontend
+        if: contains(github.event.head_commit.modified, 'frontend/')
         run: |
-          ssh -o IdentitiesOnly=yes \
-              -i ~/.ssh/id_ed25519 \
-              ubuntu@${{ secrets.SERVER_IP }} << 'EOF'
+          ssh ubuntu@${{ secrets.SERVER_IP }} << 'EOF'
             set -e
+            cd /home/ubuntu/projects/dev/MPIP/frontend
+            git pull origin main
+            npm install
+            npm run build
+            pm2 restart mpip-frontend
+          EOF
 
-            # ---- FIX: make node/npm available in non-interactive shell ----
-            export NODE_HOME=/home/ubuntu/.nvm/versions/node/v24.12.0
-            export PATH=$NODE_HOME/bin:$PATH
+      # ================= GATEWAY =================
+      - name: Deploy Gateway
+        if: contains(github.event.head_commit.modified, 'backend/gateway/')
+        run: |
+          ssh ubuntu@${{ secrets.SERVER_IP }} << 'EOF'
+            set -e
+            cd /home/ubuntu/projects/dev/MPIP/backend/gateway
+            git pull origin main
+            npm install
+            pm2 restart mpip-gateway
+          EOF
 
-            echo "Node:" $(node -v)
-            echo "NPM:" $(npm -v)
+      # ================= NODE API =================
+      - name: Deploy Node API
+        if: contains(github.event.head_commit.modified, 'backend/node-api/')
+        run: |
+          ssh ubuntu@${{ secrets.SERVER_IP }} << 'EOF'
+            set -e
+            cd /home/ubuntu/projects/dev/MPIP/backend/node-api
+            git pull origin main
+            npm install
+            pm2 restart mpip-node-api
+          EOF
 
-            # ---- Deploy ----
-            cd /home/ubuntu/projects/dev/MPIP
+      # ================= FASTAPI (CHAT) =================
+      - name: Deploy FastAPI Chat Service
+        if: contains(github.event.head_commit.modified, 'backend/fastapi-service/')
+        run: |
+          ssh ubuntu@${{ secrets.SERVER_IP }} << 'EOF'
+            set -e
+            cd /home/ubuntu/projects/dev/MPIP/backend/fastapi-service
             git pull origin main
 
-            echo "📦 Frontend"
-            cd frontend
-            npm install
-            npm run build 
-
-            echo "📦 Gateway"
-            cd ../backend/gateway
-            npm install
-
-            echo "📦 Node API"
-            cd ../node-api
-            npm install
-
-            echo "♻️ Reload PM2"
-            cd /home/ubuntu/projects/dev/MPIP
-            pm2 reload ecosystem.config.js
-            pm2 save
-
-            echo "🚀 Deployment completed successfully"
+            source venv/bin/activate || true
+            pip install -r requirements.txt
+            pm2 restart mpip-fastapi
+            sudo systemctl restart fastapi
           EOF
