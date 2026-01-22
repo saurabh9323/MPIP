@@ -1,74 +1,97 @@
-name: Deploy MPIP (Selective Monorepo)
+name: Deploy MPIP (Folder-wise Correct)
 
 on:
   push:
-    branches: [ main ]
-    paths:
-      - "frontend/**"
-      - "backend/gateway/**"
-      - "backend/node-api/**"
-      - "backend/fastapi-service/**"
+    branches:
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2   # IMPORTANT
+
+      # -------- Detect changed folders --------
+      - name: Detect changed folders
+        id: changes
+        run: |
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          if echo "$CHANGED_FILES" | grep -q "^frontend/"; then
+            echo "frontend=true" >> $GITHUB_OUTPUT
+          else
+            echo "frontend=false" >> $GITHUB_OUTPUT
+          fi
+
+          if echo "$CHANGED_FILES" | grep -q "^backend/gateway/"; then
+            echo "gateway=true" >> $GITHUB_OUTPUT
+          else
+            echo "gateway=false" >> $GITHUB_OUTPUT
+          fi
+
+          if echo "$CHANGED_FILES" | grep -q "^backend/node-api/"; then
+            echo "nodeapi=true" >> $GITHUB_OUTPUT
+          else
+            echo "nodeapi=false" >> $GITHUB_OUTPUT
+          fi
+
+      # -------- Setup SSH --------
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY_B64 }}" | base64 -d > ~/.ssh/id_ed25519
+          echo "${{ secrets.SSH_PRIVATE_KEY_B64 }}" | base64 --decode > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
-      # ================= FRONTEND =================
+      # -------- Deploy --------
+      - name: Deploy to server
+        run: |
+          ssh -o IdentitiesOnly=yes \
+              -i ~/.ssh/id_ed25519 \
+              ubuntu@${{ secrets.SERVER_IP }} << 'EOF'
+            set -e
+
+            export NODE_HOME=/home/ubuntu/.nvm/versions/node/v24.12.0
+            export PATH=$NODE_HOME/bin:$PATH
+
+            cd /home/ubuntu/projects/dev/MPIP
+            git pull origin main
+          EOF
+
+      # -------- Frontend --------
       - name: Deploy Frontend
-        if: contains(github.event.head_commit.modified, 'frontend/')
+        if: steps.changes.outputs.frontend == 'true'
         run: |
           ssh ubuntu@${{ secrets.SERVER_IP }} << 'EOF'
-            set -e
             cd /home/ubuntu/projects/dev/MPIP/frontend
-            git pull origin main
             npm install
             npm run build
-            pm2 restart all
+            pm2 restart mpip-frontend
           EOF
 
-      # ================= GATEWAY =================
+      # -------- Gateway --------
       - name: Deploy Gateway
-        if: contains(github.event.head_commit.modified, 'backend/gateway/')
+        if: steps.changes.outputs.gateway == 'true'
         run: |
           ssh ubuntu@${{ secrets.SERVER_IP }} << 'EOF'
-            set -e
             cd /home/ubuntu/projects/dev/MPIP/backend/gateway
-            git pull origin main
             npm install
-            pm2 restart all
+            pm2 restart mpip-gateway
           EOF
 
-      # ================= NODE API =================
+      # -------- Node API --------
       - name: Deploy Node API
-        if: contains(github.event.head_commit.modified, 'backend/node-api/')
+        if: steps.changes.outputs.nodeapi == 'true'
         run: |
           ssh ubuntu@${{ secrets.SERVER_IP }} << 'EOF'
-            set -e
             cd /home/ubuntu/projects/dev/MPIP/backend/node-api
-            git pull origin main
             npm install
-            pm2 restart all
-          EOF
-
-      # ================= FASTAPI (CHAT) =================
-      - name: Deploy FastAPI Chat Service
-        if: contains(github.event.head_commit.modified, 'backend/fastapi-service/')
-        run: |
-          ssh ubuntu@${{ secrets.SERVER_IP }} << 'EOF'
-            set -e
-            cd /home/ubuntu/projects/dev/MPIP/backend/fastapi-service
-            git pull origin main
-
-            source venv/bin/activate || true
-            pip install -r requirements.txt
-            pm2 restart all
-            sudo systemctl restart fastapi
+            pm2 restart mpip-node-api
           EOF
