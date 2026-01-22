@@ -13,11 +13,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
@@ -27,32 +22,36 @@ jobs:
 
       - name: Deploy to server
         run: |
-          ssh -i ~/.ssh/id_ed25519 ubuntu@${{ secrets.SERVER_IP }} << 'EOF'
+          ssh -o IdentitiesOnly=yes \
+              -i ~/.ssh/id_ed25519 \
+              ubuntu@${{ secrets.SERVER_IP }} << 'EOF'
             set -e
+
+            NODE=/home/ubuntu/.nvm/versions/node/v24.12.0/bin/node
+            NPM=/home/ubuntu/.nvm/versions/node/v24.12.0/bin/npm
+            PM2=/home/ubuntu/.nvm/versions/node/v24.12.0/bin/pm2
 
             echo "✅ SSH connected"
 
             cd /home/ubuntu/projects/dev/MPIP
-
-            echo "⬇️ Pulling latest code"
             git pull origin main
 
             echo "📦 Frontend"
             cd frontend
-            npm install
+            $NPM install
 
             echo "📦 Gateway"
             cd ../backend/gateway
-            npm install
+            $NPM install
 
             echo "📦 Node API"
             cd ../node-api
-            npm install
+            $NPM install
 
             echo "♻️ Reload PM2"
             cd /home/ubuntu/projects/dev/MPIP
-            pm2 reload ecosystem.config.js
-            pm2 save
+            $PM2 reload ecosystem.config.js
+            $PM2 save
 
-            echo "🚀 Deployment successful"
+            echo "🚀 Deployment completed successfully"
           EOF
