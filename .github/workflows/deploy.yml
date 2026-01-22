@@ -18,32 +18,41 @@ jobs:
         with:
           node-version: 18
 
-      - name: Deploy to Ubuntu via SSH
-        uses: appleboy/ssh-action@v0.1.10
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ubuntu
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          script_stop: true
-          sync: true
-          script: |
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY_B64 }}" | base64 --decode > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to server
+        run: |
+          ssh -i ~/.ssh/id_ed25519 ubuntu@${{ secrets.SERVER_IP }} << 'EOF'
+            set -e
+
             echo "✅ SSH connected"
 
             cd /home/ubuntu/projects/dev/MPIP
+
+            echo "⬇️ Pulling latest code"
             git pull origin main
 
+            echo "📦 Frontend"
             cd frontend
             npm install
 
+            echo "📦 Gateway"
             cd ../backend/gateway
             npm install
 
+            echo "📦 Node API"
             cd ../node-api
             npm install
 
+            echo "♻️ Reload PM2"
             cd /home/ubuntu/projects/dev/MPIP
             pm2 reload ecosystem.config.js
             pm2 save
 
-            echo "🚀 Deployment completed successfully"
+            echo "🚀 Deployment successful"
+          EOF
