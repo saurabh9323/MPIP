@@ -8,12 +8,7 @@ const app = express();
 /* ================================
    CORS CONFIG
 ================================ */
-const allowedOrigins = [
-  "http://localhost:3000",
-  "http://54.173.169.199",
-  "http://saurabhpathak.duckdns.org",
-  "http://saurabhpathak.duckdns.org:3000",
-];
+
 
 app.use(
   cors({
@@ -22,6 +17,8 @@ app.use(
       "http://localhost:3001",
       "http://localhost:3002",
       "http://localhost:3004",
+      "http://saurabhpathak.duckdns.org",
+      "http://saurabhpathak.duckdns.org:3000",
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -34,14 +31,19 @@ app.use(cookieParser());
 /* ================================
    FASTAPI → /fast
 ================================ */
+
+
 app.use(
   "/fast",
   createProxyMiddleware({
     target: "http://localhost:8001",
     changeOrigin: true,
+    pathRewrite: {
+      "^/fast": "",
+    },
+    
   })
 );
-
 /* ================================
    NODE API → /api
 ================================ */
