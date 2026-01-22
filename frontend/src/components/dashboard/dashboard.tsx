@@ -52,7 +52,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">
-            Dashboard latest
+            Dashboard latest 
           </h1>
           <p className="text-muted-foreground text-sm">
             Overview of your account activity

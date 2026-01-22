@@ -41,6 +41,7 @@ jobs:
             echo "📦 Frontend"
             cd frontend
             npm install
+            npm run build 
 
             echo "📦 Gateway"
             cd ../backend/gateway
