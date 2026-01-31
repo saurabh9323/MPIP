@@ -1,0 +1,8 @@
+node_modules
+.next
+.git
+.gitignore
+.next-build
+next-build.tar.gz
+*.log
+.env

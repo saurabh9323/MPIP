@@ -1,0 +1,34 @@
+version: "3.9"
+
+services:
+  gateway:
+    container_name: mpip-gateway
+    build:
+      context: ./backend/gateway
+    ports:
+      - "4000:4000"
+    restart: unless-stopped
+    depends_on:
+      - node-api
+
+  node-api:
+    container_name: mpip-node-api
+    build:
+      context: ./backend/node-api
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+    env_file:
+      - ./backend/node-api/.env
+
+  frontend:
+    container_name: mpip-frontend
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    env_file:
+      - ./frontend/.env
+    depends_on:
+      - gateway

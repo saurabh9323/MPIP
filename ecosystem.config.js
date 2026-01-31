@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: "mpip-frontend",
-      cwd: "/home/ubuntu/projects/dev/MPIP/frontend",
+      cwd: "/app/frontend",
       script: "npm",
       args: "start",
       autorestart: true,
@@ -13,19 +13,25 @@ module.exports = {
     },
     {
       name: "mpip-gateway",
-      cwd: "/home/ubuntu/projects/dev/MPIP/backend/gateway",
+      cwd: "/app/backend/gateway",
       script: "npm",
       args: "start",
       autorestart: true,
-      watch: false
+      watch: false,
+      env: {
+        NODE_ENV: "production"
+      }
     },
     {
       name: "mpip-node-api",
-      cwd: "/home/ubuntu/projects/dev/MPIP/backend/node-api",
+      cwd: "/app/backend/node-api",
       script: "npm",
       args: "start",
       autorestart: true,
-      watch: false
+      watch: false,
+      env: {
+        NODE_ENV: "production"
+      }
     }
   ]
 };

@@ -10,8 +10,8 @@ const app = express();
 
 app.use(cookieParser());
 // IMPORTANT: increase limit
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(express.json({ limit: "20mb" }));
+app.use(express.urlencoded({ extended: true, limit: "20mb" }));
 app.use(
   cors({
     origin: ["http://13.218.240.212:3000",
